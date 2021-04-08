@@ -3,9 +3,9 @@
 #AutoIt3Wrapper_Compression=4
 #AutoIt3Wrapper_UseX64=n
 #AutoIt3Wrapper_Res_Description=pmfinfos.exe
-#AutoIt3Wrapper_Res_Fileversion=1.0.0.0
+#AutoIt3Wrapper_Res_Fileversion=1.0.2.0
 #AutoIt3Wrapper_Res_ProductName=pmfinfos
-#AutoIt3Wrapper_Res_ProductVersion=1.0.0
+#AutoIt3Wrapper_Res_ProductVersion=1.0.2
 #AutoIt3Wrapper_Res_CompanyName=CNAMTS/CPAM_ARTOIS/BEI
 #AutoIt3Wrapper_Res_LegalCopyright=bei.cpam-artois@assurance-maladie.fr
 #AutoIt3Wrapper_Res_Language=1036
@@ -15,6 +15,7 @@
 #AutoIt3Wrapper_AU3Check_Parameters=-q -d -w 1 -w 2 -w 3 -w 4 -w 5 -w 6 -w 7
 #Au3Stripper_Parameters=/MO /RSLN
 #EndRegion ;**** Directives created by AutoIt3Wrapper_GUI ****
+
 ; #INDEX# =======================================================================================================================
 ; Title .........: pmfinfos
 ; AutoIt Version : 3.3.14.5
@@ -47,7 +48,7 @@ OnAutoItExitRegister("_YDTool_ExitApp")
 ; #VARIABLES# ===================================================================================================================
 _YDGVars_Set("sAppName", _YDTool_GetAppWrapperRes("ProductName"))
 _YDGVars_Set("sAppDesc", _YDTool_GetAppWrapperRes("Description"))
-_YDGVars_Set("sAppVersion", _YDTool_GetAppWrapperRes("FileVersion"))
+_YDGVars_Set("sAppVersion", _YDTool_GetAppWrapperRes("ProductVersion"))
 _YDGVars_Set("sAppContact", _YDTool_GetAppWrapperRes("LegalCopyright"))
 _YDGVars_Set("sAppVersionV", "v" & _YDGVars_Get("sAppVersion"))
 _YDGVars_Set("sAppTitle", _YDGVars_Get("sAppName") & " - " & _YDGVars_Get("sAppVersionV"))
@@ -190,14 +191,15 @@ EndFunc
 ; Parameters ....:
 ; Return values .:
 ; Author ........: yann.daniel@assurance-maladie.fr
-; Last Modified .: 05/03/2021
+; Last Modified .: 08/04/2021
 ; Notes .........:
 ;================================================================================================================================
 Func _GetLocalNetworkInfo()
 	Local $sFuncName = "_GetLocalNetworkInfo"
 	Local $oWMIService = ObjGet('winmgmts:{impersonationLevel = impersonate}!\\' & '.' & '\root\cimv2')
 	Local $oColItems = $oWMIService.ExecQuery('Select * From Win32_NetworkAdapterConfiguration Where IPEnabled = True', 'WQL', 0x30)
-	Local $j = 0
+	Local $bFind = False
+	Local $j = 0	
 	; On verifie que le tableau des DNS est OK
 	If Not IsArray($g_aConfDNS) Then
 		_YDLogger_Error("$g_aConfDNS n'est pas un tableau !")
@@ -206,15 +208,26 @@ Func _GetLocalNetworkInfo()
 	If IsObj($oColItems) = 1 Then
 		; On boucle sur les items WMIC
 		For $oObjectItem In $oColItems
+			If $bFind Then ExitLoop
+			_YDLogger_Log(">>> Boucle $oObjectItem : " & $oObjectItem.IPAddress(0), $sFuncName, 2)
 			; On boucle sur les dns autorises dans la conf
 			For $i = 1 to $g_aConfDNS[0][0]
+				If $bFind Then ExitLoop
+				_YDLogger_Sep(50, "-", 2)
+				_YDLogger_Log(">>> Boucle $g_aConfDNS : " & $i, $sFuncName, 2)
+				_YDLogger_Var("$oObjectItem.IPAddress(0)", $oObjectItem.IPAddress(0), $sFuncName, 2)
+				_YDLogger_Var("$oObjectItem.MACAddress", $oObjectItem.MACAddress, $sFuncName, 2)
+				_YDLogger_Var("$oObjectItem.DNSDomain", $oObjectItem.DNSDomain, $sFuncName, 2)
+				_YDLogger_Var("$g_aConfDNS[" & $i & "][0]", $g_aConfDNS[$i][0], $sFuncName, 2)
+				_YDLogger_Var("$g_aConfDNS[" & $i & "][1]", $g_aConfDNS[$i][1], $sFuncName, 2)
 				If $oObjectItem.DNSDomain = $g_aConfDNS[$i][1] Then
 					$g_sIP = $oObjectItem.IPAddress(0)
 					$g_sMAC = $oObjectItem.MACAddress
 					$g_sDNSDomain = $oObjectItem.DNSDomain
 					$g_sDNSType = $g_aConfDNS[$i][0]
 					$j = $j + 1
-					ExitLoop
+					_YDLogger_Log("EGALITE TROUVEE !! : " & $oObjectItem.DNSDomain & " = " & $g_aConfDNS[$i][1], $sFuncName, 2)
+					$bFind = True
 				Else
 					$g_sIP = $oObjectItem.IPAddress(0)
 					$j = $j + 1
@@ -222,6 +235,7 @@ Func _GetLocalNetworkInfo()
 			Next
 		Next
 	EndIf
+	; Si connexion non liee aux DNS attendus, on fige les valeurs en non determinee
 	If $j = 0 Then
 		$g_sIP = $g_sIPND
 		$g_sDNSType = ""
