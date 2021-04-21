@@ -3,9 +3,9 @@
 #AutoIt3Wrapper_Compression=4
 #AutoIt3Wrapper_UseX64=n
 #AutoIt3Wrapper_Res_Description=pmfinfos.exe
-#AutoIt3Wrapper_Res_Fileversion=1.0.2.0
+#AutoIt3Wrapper_Res_Fileversion=1.0.3.0
 #AutoIt3Wrapper_Res_ProductName=pmfinfos
-#AutoIt3Wrapper_Res_ProductVersion=1.0.2
+#AutoIt3Wrapper_Res_ProductVersion=1.0.3
 #AutoIt3Wrapper_Res_CompanyName=CNAMTS/CPAM_ARTOIS/BEI
 #AutoIt3Wrapper_Res_LegalCopyright=bei.cpam-artois@assurance-maladie.fr
 #AutoIt3Wrapper_Res_Language=1036
@@ -89,6 +89,9 @@ TraySetToolTip(_YDGVars_Get("sAppTitle"))
 Global $idTrayCopyInfos = TrayCreateItem("Copier les infos du PMF", -1, -1, -1)
 TrayCreateItem("")
 Global $idTrayMenuSite = TrayCreateMenu("Changer de site", -1, -1)
+If $g_bConnectProgres Then
+	Global $idTrayReconnectProgres = TrayCreateItem("Reconnecter vos lecteurs PROGRES", -1, -1, -1)
+EndIf
 Global $oTraySites = ObjCreate("Scripting.Dictionary")
 ; On boucle sur la section [sites] de la conf et on ajoute au dictionnaire des id du TrayMenu
 For $i = 1 to $g_aConfSites[0][0]
@@ -135,7 +138,8 @@ While 1
 			If $g_bConnectProgres Then
 				_ConnectProgresNetworkDrives($g_sSiteNum)
 			Endif
-			;~ _YDTool_SetTrayTip(_YDGVars_Get("sAppTitle"), "Changement de site vers " &  _GetSiteName($g_sSiteNum) & " : Termine" )
+		Case $idTrayReconnectProgres
+			_ConnectProgresNetworkDrives($g_sSiteNum)
 		Case Else
 			_Main()
 	EndSwitch
