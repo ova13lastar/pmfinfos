@@ -3,9 +3,9 @@
 #AutoIt3Wrapper_Compression=4
 #AutoIt3Wrapper_UseX64=n
 #AutoIt3Wrapper_Res_Description=pmfinfos.exe
-#AutoIt3Wrapper_Res_Fileversion=1.0.3.0
+#AutoIt3Wrapper_Res_Fileversion=1.0.4.0
 #AutoIt3Wrapper_Res_ProductName=pmfinfos
-#AutoIt3Wrapper_Res_ProductVersion=1.0.3
+#AutoIt3Wrapper_Res_ProductVersion=1.0.4
 #AutoIt3Wrapper_Res_CompanyName=CNAMTS/CPAM_ARTOIS/BEI
 #AutoIt3Wrapper_Res_LegalCopyright=bei.cpam-artois@assurance-maladie.fr
 #AutoIt3Wrapper_Res_Language=1036
@@ -99,6 +99,7 @@ For $i = 1 to $g_aConfSites[0][0]
 	$oTraySites.Add($idTraySite, $g_aConfSites[$i][0])
 Next
 TrayCreateItem("")
+Global $idTrayHelp = TrayCreateItem("Aide", -1, -1, -1)
 Global $idTrayAbout = TrayCreateItem("A propos", -1, -1, -1)
 TrayCreateItem("")
 Global $idTrayExit = TrayCreateItem("Quitter", -1, -1, -1)
@@ -113,6 +114,7 @@ Global $g_sOS = "Windows " & ($g_sOSArchitecture=="x86" ? "7" : "10")
 _YDLogger_Var("$g_sOS", $g_sOS)
 Global $g_sMsgNotConnectedToRamage = "/!\ Non connecte a RAMAGE /!\"
 Global $g_sIP = $g_sIPND, $g_sOldIP = "255.255.255.255", $g_sRamageIPStart = "55.", $g_sMAC = "", $g_sDNSDomain = "", $g_sDNSType = "", $g_sSiteNum = "", $g_sSiteName = ""
+Global $g_sHelpFilePath = @ScriptDir & "\" & _YDGVars_Get("sAppName") & ".pdf"
 Global $aTraySitesKeys = $oTraySites.Keys
 Global $aTraySitesItems = $oTraySites.Items
 Global $iTraySitesCount = $oTraySites.Count - 1
@@ -131,6 +133,8 @@ While 1
 			_YDTool_ExitConfirm()
 		Case $idTrayAbout
 			_YDTool_GUIShowAbout()
+		Case $idTrayHelp
+			Run("RunDLL32.EXE url.dll,FileProtocolHandler " & $g_sHelpFilePath)
 		Case $idTrayCopyInfos
 			_CopyInfos()
 		Case $iTraySiteFirstId To $iTraySiteLastId
@@ -266,46 +270,43 @@ Func _GetSiteNum($_sIP)
 	Local $sSiteNum = $g_sSiteNumND, $sDHCPStart, $sDHCPStop
 	Local $aDHCPRange, $aDHCPStart, $aDHCPStop
 
-	; On verifie d abord si le numero du site est deja reference dans le fichier site.ini
-	If FileExists($g_sSiteIniFilePath) Then		 
-		; On boucle sur la section [sites] de la conf pour verifier que le site est bien reference
-		For $i = 1 to $g_aConfSites[0][0]
-			_YDLogger_Var("$g_aConfSites[" & $i & "][1]", $g_aConfSites[$i][1], $sFuncName, 2)
-			If $g_aConfSites[$i][0] = IniRead($g_sSiteIniFilePath, "general", "site_num", "") Then
-				$sSiteNum = $g_aConfSites[$i][0]
-				_YDLogger_Log("Numero de site trouve dans fichier " & $g_sSiteIniFilePath & " : " & $sSiteNum, $sFuncName)
+	_YDLogger_Var("$g_sDNSType", $g_sDNSType, $sFuncName)
+	; On recherche d'abord a partir de l'IP si connecte en local	
+	If $g_sDNSType = "local" Then
+		_YDLogger_Log("Recherche par rapport a IP locale ...", $sFuncName)
+		; On boucle sur la section [sites_dhcp] dans la conf
+		For $i = 1 to $g_aConfSitesDHCP[0][0]
+			_YDLogger_Var("$g_aConfSitesDHCP[$i][0]", $g_aConfSitesDHCP[$i][0], $sFuncName, 2)
+			$aDHCPRange = StringSplit($g_aConfSitesDHCP[$i][1], "|")
+			$sDHCPStart = $aDHCPRange[1]
+			$sDHCPStop = $aDHCPRange[2]
+			_YDLogger_Var("$sDHCPStart", $sDHCPStart, $sFuncName, 2)
+			_YDLogger_Var("$sDHCPStop", $sDHCPStop, $sFuncName, 2)
+			$aDHCPStart = StringSplit($sDHCPStart, ".")
+			$aDHCPStop = StringSplit($sDHCPStop, ".")
+			If Int($aIP[1]) = $aDHCPStart[1] And Int($aIP[2]) = $aDHCPStart[2] And Int($aIP[3]) >= $aDHCPStart[3] And Int($aIP[3]) <= $aDHCPStop[3] Then
+				$sSiteNum = $g_aConfSitesDHCP[$i][0]
 				ExitLoop
 			EndIf
 		Next
 	Else
-		_YDLogger_Log("Fichier site.ini non trouve : " & $g_sSiteIniFilePath, $sFuncName)
-	EndIf
-	
-	; Si le site n a pas ete trouve dans le fichier site.ini, on va rechercher par rapport a IP ou au nom du PMF 
-	If $sSiteNum == $g_sSiteNumND Then
-		_YDLogger_Log("Numero de site non determine pour le moment. Recherche ...", $sFuncName)
-		_YDLogger_Var("$g_sDNSType", $g_sDNSType, $sFuncName)
-		; On recherche a partir de l'IP si connecte en local
-		If $g_sDNSType = "local" Then
-			_YDLogger_Log("Recherche par rapport a IP ...", $sFuncName)
-			; On boucle sur la section [sites_dhcp] dans la conf
-			For $i = 1 to $g_aConfSitesDHCP[0][0]
-				_YDLogger_Var("$g_aConfSitesDHCP[$i][0]", $g_aConfSitesDHCP[$i][0], $sFuncName, 2)
-				$aDHCPRange = StringSplit($g_aConfSitesDHCP[$i][1], "|")
-				$sDHCPStart = $aDHCPRange[1]
-				$sDHCPStop = $aDHCPRange[2]
-				_YDLogger_Var("$sDHCPStart", $sDHCPStart, $sFuncName, 2)
-				_YDLogger_Var("$sDHCPStop", $sDHCPStop, $sFuncName, 2)
-				$aDHCPStart = StringSplit($sDHCPStart, ".")
-				$aDHCPStop = StringSplit($sDHCPStop, ".")
-				If Int($aIP[1]) = $aDHCPStart[1] And Int($aIP[2]) = $aDHCPStart[2] And Int($aIP[3]) >= $aDHCPStart[3] And Int($aIP[3]) <= $aDHCPStop[3] Then
-					$sSiteNum = $g_aConfSitesDHCP[$i][0]
+		; On verifie ensuite si le numero du site est deja reference dans le fichier site.ini
+		If FileExists($g_sSiteIniFilePath) Then		 
+			; On boucle sur la section [sites] de la conf pour verifier que le site est bien reference
+			For $i = 1 to $g_aConfSites[0][0]
+				_YDLogger_Var("$g_aConfSites[" & $i & "][1]", $g_aConfSites[$i][1], $sFuncName, 2)
+				If $g_aConfSites[$i][0] = IniRead($g_sSiteIniFilePath, "general", "site_num", "") Then
+					$sSiteNum = $g_aConfSites[$i][0]
+					_YDLogger_Log("Numero de site trouve dans fichier " & $g_sSiteIniFilePath & " : " & $sSiteNum, $sFuncName)
 					ExitLoop
 				EndIf
 			Next
-		; Sinon on va rechercher le site par rapport a la lettre du nom du PMF
-		ElseIf $g_sDNSType = "vpn" Then
-			_YDLogger_Log("Recherche par rapport au nom du PMF ...", $sFuncName)
+		Else
+			_YDLogger_Log("Fichier site.ini non trouve : " & $g_sSiteIniFilePath, $sFuncName)
+		EndIf
+		; Si le site n a pas ete trouve dans le fichier site.ini, recherche sur le nom du PMF
+		If $sSiteNum == $g_sSiteNumND Then
+			_YDLogger_Log("Recherche par rapport au nom du PMF (car VPN) ...", $sFuncName)
 			; On boucle sur la section [sites_letter] dans la conf
 			For $i = 1 to $g_aConfSitesLetter[0][0]
 				_YDLogger_Var("$g_aConfSitesLetter[$i][1]", $g_aConfSitesLetter[$i][1], $sFuncName, 2)
@@ -315,11 +316,12 @@ Func _GetSiteNum($_sIP)
 				EndIf
 			Next
 		EndIf
-		; On met a jour le fichier site.ini
-		If $sSiteNum <> $g_sSiteNumND Then
-			_SetSiteInIniFile($sSiteNum)			
-		EndIf
 	EndIf
+	; On met a jour le fichier site.ini
+	If $sSiteNum <> $g_sSiteNumND Then
+		_SetSiteInIniFile($sSiteNum)
+	EndIf
+	; On renvoie le numero du site trouve
 	_YDLogger_Var("$sSiteNum", $sSiteNum, $sFuncName)
 	return $sSiteNum
 EndFunc
