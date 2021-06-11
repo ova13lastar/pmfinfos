@@ -3,9 +3,9 @@
 #AutoIt3Wrapper_Compression=4
 #AutoIt3Wrapper_UseX64=n
 #AutoIt3Wrapper_Res_Description=pmfinfos.exe
-#AutoIt3Wrapper_Res_Fileversion=1.0.4.0
+#AutoIt3Wrapper_Res_Fileversion=1.0.5.0
 #AutoIt3Wrapper_Res_ProductName=pmfinfos
-#AutoIt3Wrapper_Res_ProductVersion=1.0.4
+#AutoIt3Wrapper_Res_ProductVersion=1.0.5
 #AutoIt3Wrapper_Res_CompanyName=CNAMTS/CPAM_ARTOIS/BEI
 #AutoIt3Wrapper_Res_LegalCopyright=bei.cpam-artois@assurance-maladie.fr
 #AutoIt3Wrapper_Res_Language=1036
@@ -110,7 +110,9 @@ Global $g_sLoggedUserName = _YDTool_GetHostLoggedUserName(@ComputerName)
 _YDLogger_Var("$g_sLoggedUserName", $g_sLoggedUserName)
 Global $g_sOSArchitecture = (@OSVersion = "WIN_7") ? "x86" : "x64"
 _YDLogger_Var("$g_sOSArchitecture", $g_sOSArchitecture)
-Global $g_sOS = "Windows " & ($g_sOSArchitecture=="x86" ? "7" : "10")
+Global $g_sOSVersion = RegRead('\\' & @ComputerName & '\HKLM\Software\Microsoft\Windows NT\CurrentVersion', 'CurrentMajorVersionNumber')
+Global $g_sOSRelease = RegRead('\\' & @ComputerName & '\HKLM\Software\Microsoft\Windows NT\CurrentVersion', 'ReleaseId')
+Global $g_sOS = "W" & $g_sOSVersion & " (" & $g_sOSRelease & ")"
 _YDLogger_Var("$g_sOS", $g_sOS)
 Global $g_sMsgNotConnectedToRamage = "/!\ Non connecte a RAMAGE /!\"
 Global $g_sIP = $g_sIPND, $g_sOldIP = "255.255.255.255", $g_sRamageIPStart = "55.", $g_sMAC = "", $g_sDNSDomain = "", $g_sDNSType = "", $g_sSiteNum = "", $g_sSiteName = ""
@@ -439,7 +441,7 @@ Func _RefreshTrayTip()
 	$sTitleForTray &= "----------" & @CRLF
 	$sTitleForTray &= "Util: " & $g_sLoggedUserName & @CRLF
 	$sTitleForTray &= "Site: " & $g_sSiteName & @CRLF	
-	$sTitleForTray &= "Os  : " & $g_sOS & @CRLF
+	$sTitleForTray &= "Win : " & $g_sOS & @CRLF
 	; On decoche tous les sites
 	For $i = 0 To $iTraySitesCount
 		TrayItemSetState($aTraySitesKeys[$i], $TRAY_UNCHECKED)
