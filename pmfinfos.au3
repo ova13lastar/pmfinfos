@@ -3,9 +3,9 @@
 #AutoIt3Wrapper_Compression=4
 #AutoIt3Wrapper_UseX64=n
 #AutoIt3Wrapper_Res_Description=pmfinfos.exe
-#AutoIt3Wrapper_Res_Fileversion=1.0.5.0
+#AutoIt3Wrapper_Res_Fileversion=1.0.7.0
 #AutoIt3Wrapper_Res_ProductName=pmfinfos
-#AutoIt3Wrapper_Res_ProductVersion=1.0.5
+#AutoIt3Wrapper_Res_ProductVersion=1.0.7
 #AutoIt3Wrapper_Res_CompanyName=CNAMTS/CPAM_ARTOIS/BEI
 #AutoIt3Wrapper_Res_LegalCopyright=bei.cpam-artois@assurance-maladie.fr
 #AutoIt3Wrapper_Res_Language=1036
@@ -110,9 +110,15 @@ Global $g_sLoggedUserName = _YDTool_GetHostLoggedUserName(@ComputerName)
 _YDLogger_Var("$g_sLoggedUserName", $g_sLoggedUserName)
 Global $g_sOSArchitecture = (@OSVersion = "WIN_7") ? "x86" : "x64"
 _YDLogger_Var("$g_sOSArchitecture", $g_sOSArchitecture)
-Global $g_sOSVersion = RegRead('\\' & @ComputerName & '\HKLM\Software\Microsoft\Windows NT\CurrentVersion', 'CurrentMajorVersionNumber')
-Global $g_sOSRelease = RegRead('\\' & @ComputerName & '\HKLM\Software\Microsoft\Windows NT\CurrentVersion', 'ReleaseId')
-Global $g_sOS = "W" & $g_sOSVersion & " (" & $g_sOSRelease & ")"
+Global $g_sOSVersion = RegRead('\\' & @ComputerName & '\HKLM\Software\Microsoft\Windows NT\CurrentVersion', 'ProductName')
+$g_sOSVersion = StringReplace($g_sOSVersion, " Pro", "")
+$g_sOSVersion = StringReplace($g_sOSVersion, " Enterprise", "")
+$g_sOSVersion = StringReplace($g_sOSVersion, " Entreprise", "")
+Global $g_sOSRelease = RegRead('\\' & @ComputerName & '\HKLM\Software\Microsoft\Windows NT\CurrentVersion', 'DisplayVersion')
+If @error <> 0 Then
+	$g_sOSRelease = RegRead('\\' & @ComputerName & '\HKLM\Software\Microsoft\Windows NT\CurrentVersion', 'ReleaseId')
+EndIf
+Global $g_sOS = $g_sOSVersion & " (" & $g_sOSRelease & ")"
 _YDLogger_Var("$g_sOS", $g_sOS)
 Global $g_sMsgNotConnectedToRamage = "/!\ Non connecte a RAMAGE /!\"
 Global $g_sIP = $g_sIPND, $g_sOldIP = "255.255.255.255", $g_sRamageIPStart = "55.", $g_sMAC = "", $g_sDNSDomain = "", $g_sDNSType = "", $g_sSiteNum = "", $g_sSiteName = ""
