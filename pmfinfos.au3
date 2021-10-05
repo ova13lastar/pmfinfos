@@ -3,9 +3,9 @@
 #AutoIt3Wrapper_Compression=4
 #AutoIt3Wrapper_UseX64=n
 #AutoIt3Wrapper_Res_Description=pmfinfos.exe
-#AutoIt3Wrapper_Res_Fileversion=1.0.7.0
+#AutoIt3Wrapper_Res_Fileversion=1.0.8.0
 #AutoIt3Wrapper_Res_ProductName=pmfinfos
-#AutoIt3Wrapper_Res_ProductVersion=1.0.7
+#AutoIt3Wrapper_Res_ProductVersion=1.0.8
 #AutoIt3Wrapper_Res_CompanyName=CNAMTS/CPAM_ARTOIS/BEI
 #AutoIt3Wrapper_Res_LegalCopyright=bei.cpam-artois@assurance-maladie.fr
 #AutoIt3Wrapper_Res_Language=1036
@@ -390,7 +390,7 @@ Func _GetSiteName($_sSiteNum)
 EndFunc
 
 ; #FUNCTION# ====================================================================================================================
-; Description ...: Recupere le SiteNum a partir du TraySiteId
+; Description ...: Recuperation du SiteNum a partir du TraySiteId
 ; Syntax ........: _GetSiteNumBySiteId($_iTraySiteId)
 ; Parameters ....: $_iTraySiteId	- TraySiteId
 ; Return values .: $sSiteNum		- Numero du site au format SITExx
@@ -406,7 +406,7 @@ Func _GetSiteNumBySiteId($_iTraySiteId)
 EndFunc
 
 ; #FUNCTION# ====================================================================================================================
-; Description ...: Recupere le TraySiteId a partir du SiteNum
+; Description ...: Recuperation du TraySiteId a partir du SiteNum
 ; Syntax ........: _GetSiteIdBySiteNum($_sSiteNum)
 ; Parameters ....: $_sSiteNum		- Numero du site au format SITExx
 ; Return values .: $iTraySiteId		- TraySiteId
@@ -430,7 +430,7 @@ Func _GetSiteIdBySiteNum($_sSiteNum)
 EndFunc
 
 ; #FUNCTION# ====================================================================================================================
-; Description ...: Rafraichit les infos dans le TrayTip
+; Description ...: Rafraichissement des infos dans le TrayTip
 ; Syntax ........: _RefreshTrayTip()
 ; Parameters ....:
 ; Return values .:
